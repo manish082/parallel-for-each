@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="24e7bc7f-3d94-47ae-912e-e4ebf9b9f062" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<flow name="parallel-for-eachFlow" doc:id="8493f7ca-ce3b-48a6-8d98-3283c042fbde" >
+		<http:listener doc:name="Listener" doc:id="3273f8e9-1d0c-4f3b-bee3-07363e2d24f9" config-ref="HTTP_Listener_config" path="/test" outputMimeType="application/json"/>
+		<parallel-foreach doc:name="Parallel" collection="#[payload]">
+		<flow-ref doc:name="Flow Reference" doc:id="e15c5124-1ce2-4eb9-9dfa-8e611b142f98" name="parallel-for-eachSub_Flow1"/>
+		</parallel-foreach>
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="eef44666-d87a-4732-a8a2-51902067f6e1" type="MULE:COMPOSITE_ROUTING">
+				<logger level="ERROR" doc:name="Logger" doc:id="7960ea24-1a44-497d-88fb-d5545ea00722" message="on error from parallel for each"/>
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+	<flow name="parallel-for-eachFlow1" doc:id="14cf4aab-3fae-4de1-92db-7cae00f726ce" >
+		<http:listener doc:name="Listener" doc:id="c0416bbb-a11f-4531-92c0-ed50de314b23" config-ref="HTTP_Listener_config" path="/test1" outputMimeType="application/json"/>
+		<foreach doc:name="For Each" doc:id="855abecc-b629-42e9-bc6c-ee90ac31f7cb">
+			<flow-ref doc:name="Flow Reference" doc:id="99ce0c4b-03e6-4248-aeda-46dab3373524" name="parallel-for-eachSub_Flow1"/>
+		</foreach>
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="b55986de-74be-4207-8536-a0cac578db02" type="ANY">
+				<logger level="INFO" doc:name="Logger" doc:id="b6cc25f7-71aa-4b53-a3eb-94deecae8d26" message="error from for each"/>
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+	<sub-flow name="parallel-for-eachSub_Flow" doc:id="d34d45a8-3b50-47cf-9dac-99ff465b96f9" >
+		<logger level="INFO" doc:name="Logger" doc:id="39cf7c22-ea4a-497c-a223-988d3ac6e052" message="#[payload]"/>
+		<ee:transform doc:name="Transform Message" doc:id="dd8b66b5-8e0f-493d-a8e6-0c0f007dff83" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+import * from dw::Runtime
+output application/json
+---
+{
+}wait(5000)]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</sub-flow>
+	<sub-flow name="parallel-for-eachSub_Flow1" doc:id="9eec7d4e-3599-4f6a-9f0a-3a260cfd484e" >
+		<choice doc:name="Choice" doc:id="602f4da2-c03c-41c0-ad43-2b128f71a8cd" >
+			<when expression='#[payload.userName == "Kumar1"]'>
+				<raise-error doc:name="Raise error" doc:id="6e43f13d-e753-4b35-bc7f-c7f00c1e896d" type="CUSTOM:ROUTING"/>
+			</when>
+			<otherwise >
+				<logger level="INFO" doc:name="Logger" doc:id="94b22f3c-c7b5-4eca-960e-68998f2b1b5e" />
+			</otherwise>
+		</choice>
+	</sub-flow>
+</mule>
